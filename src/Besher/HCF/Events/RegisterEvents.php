@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Besher\HCF\Events;
 
 use Besher\HCF\Events\Buy\BuySign;
+use Besher\HCF\Events\Cheat\FlyCheats;
 use Besher\HCF\Events\Cheat\Speed;
 use Besher\HCF\Events\Crate\CrateEvents;
 use Besher\HCF\Events\Crate\CrateSetup;
@@ -31,6 +32,7 @@ class RegisterEvents implements Listener{
 		$server = $instance->getServer();
 		$reg = $server->getPluginManager();
 
+		$reg->registerEvents(new FlyCheats($instance), $instance);
 		$reg->registerEvents(new FoundDiamonds($instance), $instance);
 		$reg->registerEvents(new CrateEvents($instance), $instance);
 		$reg->registerEvents(new CrateSetup($instance), $instance);
