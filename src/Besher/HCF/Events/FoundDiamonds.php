@@ -38,7 +38,7 @@ class FoundDiamonds implements Listener{
 										++$count;
 										$this->blocks[$this->vector3AsString(new Vector3($x, $y, $z))] = true;
 									}
-								}
+								} // besher hello bro
 							}
 						}
 					}
