@@ -1,0 +1,6 @@
+---
+name: HCF
+version: 1
+main: Besher\HCF\Main
+api: 3.19.1
+...
