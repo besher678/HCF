@@ -36,6 +36,7 @@ class Main extends PluginBase
 	private static $crateManager;
 	private static $kitUi;
 
+	public $factionChat = [];
 	public $crateSetup = [];
 	public $display = [];
 	public $hologram = [];

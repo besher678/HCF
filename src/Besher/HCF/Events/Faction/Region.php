@@ -29,10 +29,9 @@ class Region implements \pocketmine\event\Listener
 		if($this->getRegion($name) == "null"){
 			if($f->inSpawnClaim($vec,)){
 				$this->setRegion($name,"Spawn");
-			} elseif($f->isClaim($vec)){
-				$region = $f->getClaimer($vec);
-				$this->setRegion($name, $region);
-			} else {
+			} elseif($f->inClaim($vec)){
+				$this->setRegion($name, $f->inClaim($vec));
+			} if($f->inClaim($vec) == null) {
 				$this->setRegion($name, "Wilderness");
 			}
 		}
@@ -46,6 +45,7 @@ class Region implements \pocketmine\event\Listener
 					$player->sendMessage("§cNow Leaving §7" . $this->getRegion($name) . " §7(§cDeathban§7) \n§cNow Entering §7" . $this->getCurrentRegion($vec) . " §7(§cDeathban§7)");
 				}
 			}
+			$player->sendMessage("§cNow Leaving §7" . $this->getRegion($name) . " §7(§cDeathban§7) \n§cNow Entering §7" . $this->getCurrentRegion($vec) . " §7(§cDeathban§7)");
 			$region = $this->getCurrentRegion($vec);
 			$this->setRegion($name, $region);
 		}
@@ -56,9 +56,9 @@ class Region implements \pocketmine\event\Listener
 		$f = Main::getFactionsManager();
 		if ($f->inSpawnClaim($vector3)) {
 			return "Spawn";
-		}elseif ($f->isClaim($vector3)) {
-			return $f->getClaimer($vector3);
-		} else{
+		}elseif ($f->inClaim($vector3)) {
+			return $f->inClaim($vector3);
+		} if($f->inClaim($vector3) == null){
 			return "Wilderness";
 		}
 	}

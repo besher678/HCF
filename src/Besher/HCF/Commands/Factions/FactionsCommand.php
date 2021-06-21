@@ -9,6 +9,7 @@ use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\utils\CommandException;
 use pocketmine\item\Item;
+use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat as TF;
 
@@ -23,23 +24,23 @@ class FactionsCommand extends Command{
 	public function __construct(Main $pg)
 	{
 		parent::__construct("faction", "Factions command", "", ["t", "f", "team", "teams", "factions"]);
-		$this->setPermission("faction.hcf");
 		$this->plugin = $pg;
 	}
 
 	public function execute(CommandSender $sender, string $commandLabel, array $args)
 	{
 		$fac = Main::getFactionsManager();
+		$lol = strtolower($args[0]);
 		if ($sender instanceof Player) {
 			if (!isset($args[0])) {
 				$sender->sendMessage(TF::GRAY . "/t help to get list of commands");
 				return true;
 			}
-			if($args[0] == "help"){
+			if($lol == "help"){
 				$sender->sendMessage(TF::AQUA."-".TF::GRAY."-------------------------------------".TF::AQUA."Faction Help".TF::GRAY." (Page 1/4)\n".TF::AQUA."/t join -".TF::GRAY." Accept a join request from another faction.\n".TF::AQUA."/f chat - ".TF::GRAY."Toggle team chat.\n".TF::AQUA."/f claim - ".TF::GRAY."Claim land in the Wilderness.");
 
 			}
-			if($args[0] == "join"){
+			if($lol == "join"){
 				if(!isset($args[1])){
 					$sender->sendMessage(self::FACTION." Usage:".TF::YELLOW."/".TF::GRAY."f join".TF::YELLOW."<".TF::GRAY."faction".TF::YELLOW.">");
 					return true;
@@ -61,34 +62,30 @@ class FactionsCommand extends Command{
 
 
 			}
-			if($args[0] == "chat") {
+			if($lol == "chat") {
 				if (!isset($args[1])) {
-					if (!$fac->inFaction($sender)) {
-						$sender->sendMessage(self::FACTION . " You are not in a " . TF::YELLOW . "Faction");
+					$sender->sendMessage(self::FACTION. " /f help for list of commands");
+					return true;
+				}
+				if (!$fac->inFaction($sender)) {
+					$sender->sendMessage(self::FACTION . " You are not in a " . TF::YELLOW . "Faction");
+					return true;
+				}
+				$name = $sender->getName();
+				$text = strtolower($args[1]);
+					if(in_array($name, $this->plugin->factionChat)){
+						unset($this->plugin->factionChat[$name]);
+						$sender->sendMessage(self::FACTION.TF::GREEN. " joined public chat");
 						return true;
 					}
-					if (in_array($sender->getName(),  $this->plugin->inChat())){
-						$this->plugin->setPublic($sender);
-						$sender->sendMessage(self::FACTION . " Chat type changed to " . TF::YELLOW . "Public");
-						return true;
-					}
-						$this->plugin->setFactionChat($sender);
-						$sender->sendMessage(self::FACTION . " Chat type changed to " . TF::YELLOW . "Faction");
-						return true;
-					}
-					if ($args[1] == "p") {
-						$sender->sendMessage(self::FACTION . " Chat type changed to " . TF::YELLOW . "Public");
-						return true;
-					}
-					if ($args[1] == "f") {
-						$sender->sendMessage(self::FACTION . " Chat type changed to " . TF::YELLOW . "Faction");
-						return true;
-					}
-			}
-			if($args[0] == "claim"){
+					$this->plugin->factionChat[$name] = $name;
+					$sender->sendMessage(self::FACTION.TF::GREEN. " joined faction chat");
+					return true;
+				}
+			if($lol == "claim"){
 
 			}
-			if($args[0] == "claimfor")
+			if($lol == "claimfor")
 			{
 				if(!isset($args[1])){
 					$sender->sendMessage(self::FACTION.TF::RED."/f claimfor <faction>");
@@ -104,9 +101,13 @@ class FactionsCommand extends Command{
 				$sender->getInventory()->addItem($claim);
 				return true;
 			}
-			if($args[0] == "create"){
+			if($lol == "create"){
 				if(!isset($args[1])){
 					$sender->sendMessage("args1");
+					return true;
+				}
+				if($fac->inFaction($sender)){
+					$sender->sendMessage(self::FACTION. TF::RED." You are already in a faction!");
 					return true;
 				}
 				if($fac->factionExists($args[1])){
@@ -121,8 +122,34 @@ class FactionsCommand extends Command{
 			if($args[0] == "disband"){
 
 			}
+
 			if($args[0] == "home"){
 
+			}
+			if($args[0] == "sethome"){
+				if(!$fac->inFaction($sender)){
+					$sender->sendMessage(self::FACTION. TF::RED." You are not in a faction!");
+					return true;
+				}
+				$faction = $fac->getPlayerFaction($sender);
+				$leader = $fac->getLeader($faction);
+				$coLeader = $fac->getCoLeader($faction);
+				$officer = $fac->getOfficer($faction);
+				if($sender->getName() != $leader or $sender->getName() != $coLeader or $sender->getName() != $officer){
+					$sender->sendMessage("You don't have permission to set faction HQ");
+					return true;
+				}
+				if($fac->inClaim($sender->getPosition()) == $faction)
+				{
+					$x = round($sender->getX());
+					$y = round($sender->getY());
+					$z = round($sender->getZ());
+					$sender->sendMessage(self::FACTION. TF::GRAY."You faction home has been set to".TF::AQUA.  "$x, $y, $z ");
+					$fac->setHQ($faction, $x, $y, $z);
+				} else{
+					$sender->sendMessage(self::FACTION. TF::RED." You must be in your claim to set Faction HQ");
+					return true;
+				}
 			}
 			if($args[0] == "map"){
 			}

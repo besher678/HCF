@@ -35,9 +35,11 @@ class FactionsManager
 
 	const LEADER = 0;
 
+	const COLEADER = 2;
+
 	const OFFICER = 1;
 
-	const MEMBER = 2;
+	const MEMBER = 3;
 
 
 	/**
@@ -55,7 +57,6 @@ class FactionsManager
 		$this->faction->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE,  faction TEXT);");
 		$this->faction->exec("CREATE TABLE IF NOT EXISTS freeze(faction TEXT PRIMARY KEY, dtrfreeze BIGINT);");
 		$this->faction->exec("CREATE TABLE IF NOT EXISTS fhome(faction TEXT PRIMARY KEY, x INT, y INT, z INT);");
-		$this->faction->exec("CREATE TABLE IF NOT EXISTS chat(player TEXT PRIMARY KEY, faction TEXT);");
 	}
 
 	public function createFaction(Player $player, string $faction)
@@ -64,7 +65,6 @@ class FactionsManager
 		$name = $player->getName();
 		$this->faction->exec("INSERT OR REPLACE INTO players(player, rank, faction) VALUES ('$name', $rank, '$faction');");
 		$this->faction->exec("INSERT OR REPLACE INTO factioninfo(faction, dtr, balance, points) VALUES ('$faction', 1.1, 0, 0);");
-		$this->faction->exec("INSERT OR REPLACE INTO chat(faction) VALUES ('$faction');");
 		$this->plugin->getServer()->broadcastMessage(TF::RED."$name ".TF::GREEN."has created a team with the name ".TF::RED.$faction);
 		$player->sendMessage(TF::GREEN."You have successfully created a team with the name $faction");
 	}
@@ -113,11 +113,12 @@ class FactionsManager
 	}
 
 	public function getFactionMemebers(string $faction){
+		$players = [];
 		$array = $this->faction->query("SELECT * FROM players WHERE faction = '$faction';");
 		while($result = $array->fetchArray(SQLITE3_ASSOC)){
-			return $result['player'];
+			$players[$result['player']] = $result['player'];
 		}
-		return true;
+		return $players;
 	}
 
 	public function getDtr(string $faction){
@@ -145,16 +146,33 @@ class FactionsManager
 		$this->faction->exec("INSERT OR REPLACE INTO claim(faction, x1, x2, z1, z2)VALUES('$faction' ,$x1, $x2, $z1, $z2);");
 	}
 
-	public function getPlayersRegion(Vector3 $pos): ? string
+	public function getLeader(string $faction)
 	{
-		$x = $pos->getFloorX();
-		$z = $pos->getFloorZ();
-		$array = $this->faction->query("SELECT * FROM claim WHERE $x >= x1 AND $x <= x2 AND $z >= z1 AND $z <= z2;");
+		$rank = self::LEADER;
+		$array = $this->faction->query("SELECT rank FROM players WHERE faction ='$faction' WHERE rank = $rank;");
 		$result = $array->fetchArray(SQLITE3_ASSOC);
-		if(empty($result)){
-			return null;
-		}
-		return $result['faction'];
+		return $result['player'] ?? null;
+	}
+
+	public function getOfficer(string $faction)
+	{
+		$rank = self::OFFICER;
+		$array = $this->faction->query("SELECT player FROM players WHERE faction ='$faction' WHERE rank = $rank;");
+		$result = $array->fetchArray(SQLITE3_ASSOC);
+		return $result['player'] ?? "null";
+	}
+
+	public function getCoLeader(string $faction)
+	{
+		$rank = self::COLEADER;
+		$array = $this->faction->query("SELECT rank FROM players WHERE faction ='$faction' WHERE rank = $rank;");
+		$result = $array->fetchArray(SQLITE3_ASSOC);
+		return $result['player'] ?? "null";
+	}
+
+	public function setHQ(string $faction, $x, $y, $z)
+	{
+		$this->faction->exec("INSERT INTO fhome(faction, x, y, z)VALUE('$faction', $x, $y, $z);");
 	}
 
 	public function inSpawnClaim(Vector3 $pos) : bool
@@ -181,25 +199,12 @@ class FactionsManager
 		return false;
 	}
 
-	public function containsPlayer(Vector3 $vector3) : bool
-	{
-
-	}
-
-	public function isClaim(Vector3 $pos): bool {
+	public function inClaim(Vector3 $pos) {
 		$x = $pos->getX();
 		$z = $pos->getZ();
-		$result = $this->faction->query("SELECT faction FROM claim WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
-		$array = $result->fetchArray(SQLITE3_ASSOC);
-		return empty($array) == false;
-	}
-
-	public function getClaimer(Vector3 $vector3): string {
-		$x = $vector3->getX();
-		$z = $vector3->getZ();
-		$result = $this->faction->query("SELECT * FROM claim WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
-		$array = $result->fetchArray(SQLITE3_ASSOC);
-		return $array["faction"];
+		$array = $this->faction->query("SELECT faction FROM claim WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$result = $array->fetchArray(SQLITE3_ASSOC);
+		return $result['faction'] ?? null;
 	}
 
 }
