@@ -204,7 +204,7 @@ class FactionsManager
 		$z = $pos->getZ();
 		$array = $this->faction->query("SELECT faction FROM claim WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
 		$result = $array->fetchArray(SQLITE3_ASSOC);
-		return $result['faction'] ?? null;
+		return $result['faction'] ?? "Wilderness";
 	}
 
 }

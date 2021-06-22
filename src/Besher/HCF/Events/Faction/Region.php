@@ -6,6 +6,7 @@ use Besher\HCF\Main;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
+use pocketmine\utils\TextFormat;
 use pocketmine\utils\TextFormat as TF;
 
 class Region implements \pocketmine\event\Listener
@@ -26,39 +27,62 @@ class Region implements \pocketmine\event\Listener
 		$name = $e->getPlayer()->getName();
 		$player = $e->getPlayer();
 		$vec = $e->getPlayer()->getPosition();
-		if($this->getRegion($name) == "null"){
-			if($f->inSpawnClaim($vec,)){
-				$this->setRegion($name,"Spawn");
-			} elseif($f->inClaim($vec)){
-				$this->setRegion($name, $f->inClaim($vec));
-			} if($f->inClaim($vec) == null) {
+
+		if($this->getRegion($name) == "region") {
+
+			if(Main::getFactionsManager()->inSpawnClaim($vec)) {
+
+				$this->setRegion($name, "Spawn");
+
+			}elseif(Main::getFactionsManager()->inClaim($player)) {
+
+				$region = Main::getFactionsManager()->inClaim($vec);
+
+				$this->setRegion($name, $region);
+
+			}else {
+
 				$this->setRegion($name, "Wilderness");
+
 			}
+
 		}
-		if($this->getRegion($name) != $this->getCurrentRegion($vec)){
-			if($this->getCurrentRegion($vec) == "Spawn"){
-				$player->sendMessage("§cNow Leaving §7" . $this->getRegion($name) . " §7(§cDeathban§7) \n§aNow Entering §7Spawn (§aNon-Deathban§7)");
-			} else {
-				if($this->getRegion($name) == "Spawn"){
-					$player->sendMessage("§cNow Leaving §7Spawn (§aNon-Deathban§7) \n§cNow Entering §7" . $this->getCurrentRegion($vec) . " §7(§cDeathban§7)");
-				} else {
-					$player->sendMessage("§cNow Leaving §7" . $this->getRegion($name) . " §7(§cDeathban§7) \n§cNow Entering §7" . $this->getCurrentRegion($vec) . " §7(§cDeathban§7)");
+
+		if($this->getRegion($name) != $this->getCurrentRegion($vec)) {
+
+			if($this->getCurrentRegion($vec) == "Spawn") {
+
+				$player->sendMessage(TF::YELLOW."§r§eNow Leaving§r§7: ".TextFormat::RED.$this->getRegion($name).TextFormat::YELLOW." (".TextFormat::GRAY."Deathban".TextFormat::YELLOW.")");
+
+				$player->sendMessage(TextFormat::YELLOW."§r§eNow Entering§r§7:".TextFormat::RED." Spawn ".TextFormat::YELLOW."(".TextFormat::GREEN."Non-Deathban".TextFormat::YELLOW.")");
+
+			}else {
+
+				if($this->getRegion($name) == "Spawn") {
+
+					$player->sendMessage(TextFormat::YELLOW."§eNow Leaving§7:".TextFormat::GRAY." §cSpawn ".TextFormat::YELLOW."(".TextFormat::GREEN."Non-Deathban".TextFormat::YELLOW.")");
+
+					$player->sendMessage(TextFormat::YELLOW."§eNow Entering§7: ".TextFormat::RED.$this->getCurrentRegion($vec).TextFormat::YELLOW." (".TextFormat::GRAY."Deathban".TextFormat::YELLOW.")");
+				}else {
+					$player->sendMessage(TextFormat::YELLOW."Now Leaving§7: ".TextFormat::RED.$this->getRegion($name).TextFormat::YELLOW." (".TextFormat::GRAY."Deathban".TextFormat::YELLOW.")");
+
+					$player->sendMessage(TextFormat::YELLOW."Now Entering§7: ".TextFormat::RED.$this->getCurrentRegion($vec).TextFormat::YELLOW." (".TextFormat::GRAY."Deathban".TextFormat::YELLOW.")");
+
 				}
+
 			}
-			$player->sendMessage("§cNow Leaving §7" . $this->getRegion($name) . " §7(§cDeathban§7) \n§cNow Entering §7" . $this->getCurrentRegion($vec) . " §7(§cDeathban§7)");
-			$region = $this->getCurrentRegion($vec);
-			$this->setRegion($name, $region);
+
+			$this->setRegion($name, $this->getCurrentRegion($vec));
+
 		}
 	}
 
-	public function getCurrentRegion(Vector3 $vector3): string
-	{
-		$f = Main::getFactionsManager();
-		if ($f->inSpawnClaim($vector3)) {
+	public function getCurrentRegion(Vector3 $vector3) : string {
+		if(Main::getFactionsManager()->inSpawnClaim($vector3)) {
 			return "Spawn";
-		}elseif ($f->inClaim($vector3)) {
-			return $f->inClaim($vector3);
-		} if($f->inClaim($vector3) == null){
+		}elseif(Main::getFactionsManager()->inClaim($vector3)) {
+			return Main::getFactionsManager()->inClaim($vector3);
+		}else {
 			return "Wilderness";
 		}
 	}
