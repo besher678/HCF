@@ -47,13 +47,10 @@ class ClaimEvent implements \pocketmine\event\Listener
 					if ($this->delay[$name] = time() + 2) {
 						$this->delay[$name] = time() + 2;
 						$pos = $e->getBlock()->asPosition();
-						if($pos->getX() >= 500 or $pos->getZ() >= 500){
 							$e->getPlayer()->sendMessage(self::FACTION."Set §efirst §7claim position. (§b{$pos->getX()}, {$pos->getZ()}§7) (§a$0§7)");
 							$this->firstPos[$name] = $pos;
 							$this->buildWall($e->getPlayer(), $pos->getX(), $pos->getY(), $pos->getZ());
 							$e->setCancelled();
-						} else
-							$e->getPlayer()->sendMessage(self::FACTION. "§7You must be §e500 blocks away from spawn");
 						return;
 					} else {
 						if (time() >= $this->delay[$name]) {
@@ -65,7 +62,6 @@ class ClaimEvent implements \pocketmine\event\Listener
 					if ($this->delay[$name] = time() + 2) {
 						$this->delay[$name] = time() + 2;
 						$pos = $e->getBlock()->asPosition();
-						if($pos->getX() >= 500 or $pos->getZ() >= 500) {
 							if (array_key_exists($name, $this->firstPos)) {
 								$pos1 = $this->firstPos[$name];
 								$distance = $pos->distance($pos1);
@@ -77,8 +73,6 @@ class ClaimEvent implements \pocketmine\event\Listener
 									$e->getPlayer()->sendMessage(self::FACTION . "§7Claim must be at least §e5x5 blocks §7wide.");
 							} else
 								$e->setCancelled();
-						} else
-							$e->getPlayer()->sendMessage(self::FACTION. "§7You must be §e500 blocks away from spawn");
 					} else {
 						if (time() >= $this->delay[$name]) {
 							unset($this->delay[$name]);
