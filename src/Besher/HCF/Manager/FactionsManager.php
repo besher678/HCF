@@ -179,7 +179,10 @@ class FactionsManager
 	{
 		$array = $this->faction->query("SELECT * FROM claim WHERE faction = 'Spawn';");
 		$result = $array->fetchArray(SQLITE3_ASSOC);
-		return true ?? false;
+		if($result == null){
+			return false;
+		}
+		return true;
 	}
 
 	public function inSpawnClaim(Vector3 $pos) : bool

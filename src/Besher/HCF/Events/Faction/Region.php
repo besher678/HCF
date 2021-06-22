@@ -27,7 +27,6 @@ class Region implements \pocketmine\event\Listener
 		$player = $e->getPlayer();
 		$vec = $e->getPlayer()->getPosition();
 		if(!Main::getFactionsManager()->spawnIsSet()){
-			$this->plugin->getServer()->broadcastMessage("Spawn is not set Regions will not work");
 			return;
 		}
 		if($this->getRegion($name) == "region") {

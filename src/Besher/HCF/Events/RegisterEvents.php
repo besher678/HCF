@@ -38,7 +38,6 @@ class RegisterEvents implements Listener{
 		$reg->registerEvents(new CrateSetup($instance), $instance);
 		$reg->registerEvents(new Speed($instance), $instance);
 		$reg->registerEvents(new DeathEvent($instance), $instance);
-		$reg->registerEvents(new RegionMove($instance), $instance);
 		$reg->registerEvents(new Region($instance), $instance);
 		$reg->registerEvents(new ChatFormat($instance), $instance);
 		$reg->registerEvents(new SwitcherSnowBall($instance), $instance);
