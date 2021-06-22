@@ -26,9 +26,6 @@ class Region implements \pocketmine\event\Listener
 		$name = $e->getPlayer()->getName();
 		$player = $e->getPlayer();
 		$vec = $e->getPlayer()->getPosition();
-		if(!Main::getFactionsManager()->spawnIsSet()){
-			return;
-		}
 		if($this->getRegion($name) == "region") {
 
 			if(Main::getFactionsManager()->inSpawnClaim($vec)) {

@@ -19,15 +19,12 @@ class FactionsManager
 
 	private $plugin;
 
-	public $stepOne = [];
-	public $stepTwo = [];
-	public $stepThree = [];
-
-	public $x1 = [];
-	public $x2 = [];
-	public $z1 = [];
-	public $z2 = [];
 	public $factions = [];
+
+	public $claimSetup = [];
+	public $confirm = [];
+	public $cost = [];
+	public $erase = [];
 
 	public $factionChat = [];
 
@@ -45,7 +42,7 @@ class FactionsManager
 	/**
 	 * @var \SQLite3
 	 */
-	private $faction;
+	public $faction;
 
 	public function __construct(Main $pg)
 	{
@@ -67,6 +64,30 @@ class FactionsManager
 		$this->faction->exec("INSERT OR REPLACE INTO factioninfo(faction, dtr, balance, points) VALUES ('$faction', 1.1, 0, 0);");
 		$this->plugin->getServer()->broadcastMessage(TF::RED."$name ".TF::GREEN."has created a team with the name ".TF::RED.$faction);
 		$player->sendMessage(TF::GREEN."You have successfully created a team with the name $faction");
+	}
+
+	public function getFactionBalance(string $faction)
+	{
+		$array = $this->faction->query("SELECT balance FROM factioninfo WHERE faction = '$faction';");
+		$result = $array->fetchArray(SQLITE3_ASSOC);
+		return $result['balance'] ?? 0;
+	}
+
+	public function addToBalance(string $faction, string $amount)
+	{
+		$bal = $this->getFactionBalance($faction);
+		$this->faction->exec("UPDATE factioninfo SET balance = $amount + $bal WHERE faction = '$faction';");
+	}
+
+	public function setBalance(string $faction, string $amount)
+	{
+		$this->faction->exec("UPDATE factioninfo SET balance = $amount WHERE faction = '$faction';");
+	}
+
+	public function removeFromBalance(string $faction, $amount)
+	{
+		$bal = $this->getFactionBalance($faction);
+		$this->faction->exec("UPDATE factioninfo SET balance = $bal - $amount WHERE faction = '$faction';");
 	}
 
 	public function joinFaction(Player $player, string $faction)
@@ -130,8 +151,8 @@ class FactionsManager
 	public function claimFor(string $faction, string $name)
 	{
 		if (!$this->factionExists($faction)) {
-			unset($this->stepOne[$name]);
-			$this->stepOne[$name] = $faction;
+			unset($this->claimSetup[$name]);
+			$this->claimSetup[$name] = $faction;
 		}
 	}
 

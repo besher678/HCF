@@ -19,6 +19,7 @@ class FactionsCommand extends Command{
 
 	public $stepOne = [];
 
+
 	const FACTION = TF::DARK_GRAY."[".TF::RED.TF::BOLD."Faction".TF::RESET.TF::DARK_GRAY."] ".TF::GRAY;
 
 	public function __construct(Main $pg)
@@ -95,15 +96,13 @@ class FactionsCommand extends Command{
 				$name = $sender->getName();
 				$fac->claimFor($args[1], $name);
 				$name = $sender->getName();
-				unset($this->stepOne[$name]);
-				$this->stepOne[$name] = $args[1];
-				$claim = Item::get(Item::WOODEN_HOE)->setCustomName(TF::RESET.TF::GOLD."Claiming Wand")->setLore([TF::RESET.TF::YELLOW."Right Click block to set claim area\nShift click air to confirm\nClick air to cancel"]);
+				$claim = Item::get(Item::WOODEN_HOE)->setCustomName(TF::RESET.TF::RED."Claim Wand")->setLore([TF::RESET.TF::GRAY."Left or Right click a block to set the\n".TF::GREEN."first".TF::GRAY." and".TF::GREEN." second ".TF::GRAY."position of your claim\n\nShift and right click the air or a block to\n".TF::GREEN."purchase ".TF::GRAY."your current claim selection\n\nRight click the air to ".TF::GREEN."clear\n".TF::GRAY."your current claim selection"]);
 				$sender->getInventory()->addItem($claim);
 				return true;
 			}
 			if($lol == "create"){
 				if(!isset($args[1])){
-					$sender->sendMessage("args1");
+					$sender->sendMessage(self::FACTION.TF::GRAY." /f create <faction_name>");
 					return true;
 				}
 				if($fac->inFaction($sender)){

@@ -4,6 +4,7 @@ namespace Besher\HCF\Events\Claim;
 
 use Besher\HCF\Main;
 use Besher\HCF\Manager\FactionsManager;
+use Besher\HCF\Tasks\CheckClaimTask;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
 use pocketmine\block\BlockIds;
@@ -11,165 +12,174 @@ use pocketmine\event\player\PlayerChatEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
+use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
 use pocketmine\Player;
 use pocketmine\utils\TextFormat as TF;
 
 class ClaimEvent implements \pocketmine\event\Listener
 {
+	public CONST FACTION = "§8[§cFaction§8] §7";
+
+	public $plugin;
 
 	public $delay = [];
 
-	public $firstPosX = [];
-	public $firstPosZ = [];
-
-	public $secondPosX = [];
-	public $secondPosZ = [];
+	public $firstPos = [];
+	public $secondPos = [];
 
 	public $cost = [];
 
+	public $erase = [];
+
 	public function __construct(Main $pg)
 	{
+		$this->plugin = $pg;
 	}
 
 	public function claim(PlayerInteractEvent $e): void
 	{
 		$f = Main::getFactionsManager();
-		if($e->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK OR $e->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
-			if (!$e->getPlayer()->getInventory()->getItemInHand()->getId() == Item::WOODEN_HOE and !$e->getPlayer()->getInventory()->getItemInHand()->getCustomName() == TF::RESET . TF::GOLD . "Claiming Wand") return;
+		if ($e->getAction() === PlayerInteractEvent::RIGHT_CLICK_BLOCK or $e->getAction() === PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+			if (!$e->getPlayer()->getInventory()->getItemInHand()->getId() == Item::WOODEN_HOE and !$e->getPlayer()->getInventory()->getItemInHand()->getCustomName() == TF::RESET . TF::RED . "Claim Wand") return;
 			$name = $e->getPlayer()->getName();
-			if (array_key_exists($name, $f->stepOne)) {
-				if (!isset($this->delay[$e->getPlayer()->getName()])) {
-				$this->delay[$e->getPlayer()->getName()] = time() + 1;
-				$x = (int)$e->getBlock()->getX();
-				$z = (int)$e->getBlock()->getZ();
-				$this->firstPosX[$e->getPlayer()->getName()] = $x;
-				$this->firstPosZ[$e->getPlayer()->getName()] = $z;
-				$e->getPlayer()->sendMessage(TF::GREEN . "First pos set please select second");
-				$this->claimTower($e->getPlayer(), $e->getBlock()->getX(), $e->getBlock()->getY(), $e->getBlock()->getZ());
-				unset($f->stepTwo[$name]);
-				$faction = $f->stepOne[$name];
-				$f->stepTwo[$name] = $faction;
-				unset($f->stepOne[$name]);
-				$e->setCancelled();
-				return;
-			} else {
-					if (time() >= $this->delay[$e->getPlayer()->getName()]) {
-						unset($this->delay[$e->getPlayer()->getName()]);
+			if (array_key_exists($name, $f->claimSetup)) {
+				if ($e->getAction() == PlayerInteractEvent::LEFT_CLICK_BLOCK) {
+					if ($this->delay[$name] = time() + 2) {
+						$this->delay[$name] = time() + 2;
+						$pos = $e->getBlock()->asPosition();
+						if($pos->getX() >= 500 or $pos->getZ() >= 500){
+							$e->getPlayer()->sendMessage(self::FACTION."Set §efirst §7claim position. (§b{$pos->getX()}, {$pos->getZ()}§7) (§a$0§7)");
+							$this->firstPos[$name] = $pos;
+							$this->buildWall($e->getPlayer(), $pos->getX(), $pos->getY(), $pos->getZ());
+							$e->setCancelled();
+						} else
+							$e->getPlayer()->sendMessage(self::FACTION. "§7You must be §e500 blocks away from spawn");
+						return;
+					} else {
+						if (time() >= $this->delay[$name]) {
+							unset($this->delay[$name]);
+						}
 					}
-					return;
+				}
+				if ($e->getAction() == PlayerInteractEvent::RIGHT_CLICK_BLOCK) {
+					if ($this->delay[$name] = time() + 2) {
+						$this->delay[$name] = time() + 2;
+						$pos = $e->getBlock()->asPosition();
+						if($pos->getX() >= 500 or $pos->getZ() >= 500) {
+							if (array_key_exists($name, $this->firstPos)) {
+								$pos1 = $this->firstPos[$name];
+								$distance = $pos->distance($pos1);
+								if ($distance >= 6) {
+									$this->secondPos[$name] = $pos;
+									$this->buildWall($e->getPlayer(), $pos->getX(), $pos->getY(), $pos->getZ());
+									$this->checkClaim($name);
+								} else
+									$e->getPlayer()->sendMessage(self::FACTION . "§7Claim must be at least §e5x5 blocks §7wide.");
+							} else
+								$e->setCancelled();
+						} else
+							$e->getPlayer()->sendMessage(self::FACTION. "§7You must be §e500 blocks away from spawn");
+					} else {
+						if (time() >= $this->delay[$name]) {
+							unset($this->delay[$name]);
+							$e->setCancelled();
+						}
+					}
 				}
 			}
-			if (array_key_exists($name, $f->stepTwo)) {
-				if (!isset($this->delay[$e->getPlayer()->getName()])) {
-					$this->delay[$e->getPlayer()->getName()] = time() + 1;
-					$x = (int)$e->getBlock()->getX();
-					$z = (int)$e->getBlock()->getZ();
-					$this->secondPosX[$e->getPlayer()->getName()] = $x;
-					$this->secondPosZ[$e->getPlayer()->getName()] = $z;
-					$count = 0;
-					$e->setCancelled();
-					$e->getPlayer()->sendMessage(TF::GREEN . "Second position\n Claim cost = 100");
-					$faction = $f->stepTwo[$name];
-					$f->stepThree[$name] = $faction;
-					$this->cost[$name] = $count * 10;
-					unset($f->stepTwo[$name]);
-					$this->claimTower($e->getPlayer(), $e->getBlock()->getX(), $e->getBlock()->getY(), $e->getBlock()->getZ());
-					return;
-				} else {
-					if (time() >= $this->delay[$e->getPlayer()->getName()]) {
-						unset($this->delay[$e->getPlayer()->getName()]);
+
+		}
+	}
+
+	public function confirm(PlayerInteractEvent $e)
+	{
+		$name = $e->getPlayer()->getName();
+		$f = Main::getFactionsManager();
+		if (array_key_exists($name, $f->confirm)) {
+			if ($e->getPlayer()->isSneaking()) {
+				if ($e->getAction() == PlayerInteractEvent::RIGHT_CLICK_AIR) {
+					if (array_key_exists($name, $this->firstPos) == false) {
+						$e->getPlayer()->sendMessage("Please select the first position");
+						return;
 					}
-					return;
+					if (array_key_exists($name, $this->secondPos) == false) {
+						$e->getPlayer()->sendMessage("Please select the second position");
+						return;
+					}
+					$faction = $f->confirm[$name];
+					$cost = $f->cost[$name];
+						$pos1 = $this->firstPos[$name];
+						$pos2 = $this->secondPos[$name];
+						$this->erase[$name] = $faction;
+						$e->getPlayer()->sendMessage(self::FACTION."You have force claimed area for $faction");
+						$f->setClaim($faction, $pos1->getX(), $pos2->getX(), $pos1->getZ(), $pos2->getZ());
+						unset($f->confirm[$name]);
+						unset($f->erase[$name]);
+						unset($f->cost[$name]);
+						unset($f->claimSetup[$name]);
+						return;
 				}
 			}
 		}
 	}
 
-	public function chatEvent(PlayerChatEvent $e)
+	public function cancelClaim(PlayerChatEvent $e)
 	{
 		$f = Main::getFactionsManager();
-		$eco = Main::getEcoManager();
 		$name = $e->getPlayer()->getName();
-		if (array_key_exists($e->getPlayer()->getName(), $f->stepThree)) {
-			if($e->getMessage() == "cancel"){
-				unset($f->stepThree[$e->getPlayer()->getName()]);
-				$x1 = $this->firstPosX[$name];
-				$x2 = $this->secondPosX[$name];
-				$z1 = $this->firstPosZ[$name];
-				$z2 = $this->secondPosZ[$name];
-				$e->getPlayer()->sendMessage("Claim disbanded");
-				$this->removeTower($e->getPlayer(), $x1, $z1);
-				$this->removeTower($e->getPlayer(), $x2, $z2);
+		if (array_key_exists($name, Main::getFactionsManager()->confirm)) {
+			if ($e->getMessage() == "cancel") {
+				$faction = $this->erase[$name];
+				unset($f->confirm[$name]);
+				unset($f->erase[$name]);
+				unset($f->cost[$name]);
+				unset($f->claimSetup[$name]);
+				Main::getFactionsManager()->claimSetup[$name] = $faction;
+				$e->getPlayer()->sendMessage(self::FACTION. TF::GRAY . "Claim canceled");
 				$e->setCancelled();
-				return;
-			}
-			if($e->getMessage() == "confirm"){
-				$cost = $this->cost[$e->getPlayer()->getName()];
-				if($eco->getMoney($e->getPlayer()) >= $cost){
-					$eco->reduceMoney($e->getPlayer(), $cost);
-					$x1 = $this->firstPosX[$name];
-					$x2 = $this->secondPosX[$name];
-					$z1 = $this->firstPosZ[$name];
-					$z2 = $this->secondPosZ[$name];
-					$faction = $f->stepThree[$name];
-					$f->setClaim($faction, $x1, $z1, $x2, $z2);
-					$e->getPlayer()->sendMessage("You have claimed for $cost");
-					$this->removeTower($e->getPlayer(), $x1, $z1);
-					$this->removeTower($e->getPlayer(), $x2, $z2);
-					unset($this->cost[$name]);
-					unset($f->stepThree[$name]);
-					unset($this->firstPosX[$name]);
-					unset($this->secondPosX[$name]);
-					unset($this->firstPosZ[$name]);
-					unset($this->secondPosZ[$name]);
-					$e->setCancelled();
-					return;
-				}
 			}
 		}
 	}
 
-	public function sendBlock(Player $player, $x, $y, $z, $id){
-		$block = Block::get($id);
-		$block->x = (int) $x;
-		$block->y = (int) $y;
-		$block->z = (int) $z;
-		$block->level = $player->getLevel();
-		$player->level->sendBlocks([$player],[$block]);
-	}
-
-	public function claimTower(Player $player, int $x, int $y, int $z)
+	public function buildWall(Player $player, int $x, int $y, int $z)
 	{
-		$i = $y;
-		for($i = $y; $i < $y +50; $i++){
-			$this->sendBlock($player, $x, $i, $z, $this->glassAndEmerald());
+		for ($i = $y; $i < $y + 40; $i++) {
+			$this->setFakeBlock($player, new Vector3($x, $i, $z), $this->getRandWallBlock());
 		}
 	}
 
-	public function removeTower(Player $player, int $x, int $z)
+	public function setFakeBlock(Player $player, Vector3 $pos, int $id, int $data = 0)
 	{
-		$y = 40;
-		for($i = $y; $i < $y + 100; $i++){
-			$this->sendBlock($player, $x, $i, $z, $this->air());
-		}
+		$block = Block::get($id, $data)->setComponents($pos->getX(), $pos->getY(), $pos->getZ())->setLevel($player->getLevel());
+		$player->getLevel()->sendBlocks([$player], [$block], UpdateBlockPacket::FLAG_ALL);
 	}
 
-	public function glassAndEmerald(): int
+	public function getRandWallBlock(): int
 	{
 		switch (mt_rand(1, 3)) {
 			case 1:
-			case 2:
-				return BlockIds::GLASS;
+
+				return BlockIds::DIAMOND_BLOCK;
 				break;
+			case 2:
 			case 3:
-				return BlockIds::EMERALD_BLOCK;
+			case 4:
+			return BlockIds::GLASS;
 				break;
 		}
 		return BlockIds::GLASS;
 	}
 
-	public function air(): int
+	public function checkClaim(string $name)
 	{
-		return BlockIds::AIR;
+		$dir = $this->plugin->getDataFolder() . "db/"  . "Factions.db";
+		$pos1 = $this->firstPos[$name];
+		$pos2 = $this->secondPos[$name];
+		$x1 = min($pos1->getX(), $pos2->getX());
+		$z1 = min($pos1->getZ(), $pos2->getZ());
+		$x2 = max($pos1->getX(), $pos2->getX());
+		$z2 = max($pos1->getZ(), $pos2->getZ());
+		$this->plugin->getServer()->getAsyncPool()->submitTask(new CheckClaimTask($x1, $z1, $x2, $z2,$dir, $name));
 	}
+
 }

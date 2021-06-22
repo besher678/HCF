@@ -10,6 +10,7 @@ use Besher\HCF\Commands\Factions\Money;
 use Besher\HCF\Commands\Player\Kit;
 use Besher\HCF\Commands\Player\PvpTimer;
 use Besher\HCF\Commands\Player\Rename;
+use Besher\HCF\Commands\Player\Spawn;
 use Besher\HCF\Commands\StaffCommands\Border;
 use Besher\HCF\Commands\StaffCommands\Clear;
 use Besher\HCF\Commands\StaffCommands\Gmc;
@@ -30,6 +31,7 @@ class RegisterCommands{
 		$instance = Main::getInstance();
 		$server = $instance->getServer();
 		$map = $server->getCommandMap();
+		$map->register("spawn", new Spawn($instance));
 		$map->register("kit", new Kit($instance));
 		$map->register("crate", new Crate($instance));
 		$map->register("rollback", new RollBack($instance));

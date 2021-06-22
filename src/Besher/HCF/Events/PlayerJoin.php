@@ -79,7 +79,6 @@ class PlayerJoin implements Listener
 		$p = Main::getPlayerManager();
 		if($packet instanceof LoginPacket) {
 			$device = $this->getDeviceNameByNumber($packet->clientData['DeviceOS']);
-			echo $packet->username;
 			$p->setDevice($packet->username, $device);
 		}
 	}
