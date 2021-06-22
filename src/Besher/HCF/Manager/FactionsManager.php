@@ -175,6 +175,13 @@ class FactionsManager
 		$this->faction->exec("INSERT INTO fhome(faction, x, y, z)VALUE('$faction', $x, $y, $z);");
 	}
 
+	public function spawnIsSet()
+	{
+		$array = $this->faction->query("SELECT * FROM claim WHERE faction = 'Spawn';");
+		$result = $array->fetchArray(SQLITE3_ASSOC);
+		return true ?? false;
+	}
+
 	public function inSpawnClaim(Vector3 $pos) : bool
 	{
 		$array = $this->faction->query("SELECT * FROM claim WHERE faction ='Spawn';");
