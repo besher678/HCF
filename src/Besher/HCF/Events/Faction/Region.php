@@ -23,7 +23,6 @@ class Region implements \pocketmine\event\Listener
 
 	public function enterRegion(PlayerMoveEvent $e) : void
 	{
-		$f = Main::getFactionsManager();
 		$name = $e->getPlayer()->getName();
 		$player = $e->getPlayer();
 		$vec = $e->getPlayer()->getPosition();
