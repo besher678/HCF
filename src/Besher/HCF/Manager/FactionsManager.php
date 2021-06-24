@@ -233,8 +233,11 @@ class FactionsManager
 	public function inClaim(Vector3 $pos) {
 		$x = $pos->getX();
 		$z = $pos->getZ();
-		$array = $this->faction->query("SELECT faction FROM claim WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$array = $this->faction->query("SELECT * FROM claim WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
 		$result = $array->fetchArray(SQLITE3_ASSOC);
+		echo "\n";
+		echo $result['faction'] ?? "Wilderness";
+		echo "\n";
 		return $result['faction'] ?? "Wilderness";
 	}
 

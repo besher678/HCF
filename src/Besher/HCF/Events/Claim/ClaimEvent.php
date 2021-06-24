@@ -4,6 +4,7 @@ namespace Besher\HCF\Events\Claim;
 
 use Besher\HCF\Main;
 use Besher\HCF\Manager\FactionsManager;
+use Besher\HCF\Tasks\CheckClaimForTask;
 use Besher\HCF\Tasks\CheckClaimTask;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
@@ -173,7 +174,7 @@ class ClaimEvent implements \pocketmine\event\Listener
 		$z1 = min($pos1->getZ(), $pos2->getZ());
 		$x2 = max($pos1->getX(), $pos2->getX());
 		$z2 = max($pos1->getZ(), $pos2->getZ());
-		$this->plugin->getServer()->getAsyncPool()->submitTask(new CheckClaimTask($x1, $z1, $x2, $z2,$dir, $name));
+		$this->plugin->getServer()->getAsyncPool()->submitTask(new CheckClaimForTask($x1, $z1, $x2, $z2,$dir, $name));
 	}
 
 }
